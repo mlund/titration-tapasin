@@ -1,0 +1,46 @@
+diff --git a/include/faunus/analysis.h b/include/faunus/analysis.h
+index 818f04b..1c20f9e 100755
+--- a/include/faunus/analysis.h
++++ b/include/faunus/analysis.h
+@@ -691,7 +691,7 @@ namespace Faunus {
+      */
+     class ChargeMultipole : public AnalysisBase {
+       private:
+-        std::map< string, Average<double> > Z, Z2, mu, mu2;
++        std::map< string, Average<double> > Z, Z2, mu, mu2, Zabs;
+ 
+         template<class Tgroup, class Tpvec>
+           double charge(const Tgroup &g, const Tpvec &p, double Z=0) {
+@@ -739,6 +739,11 @@ namespace Faunus {
+                 double dip=dipole(g,spc);
+                 mu[g.name]+=dip;
+                 mu2[g.name]+=pow(dip,2);
++
++                double zabs = 0;
++                for (auto i : g)
++                  zabs += std::fabs( spc.p[i].charge );
++                Zabs[g.name]+=zabs;
+               }
+           }
+ 
+diff --git a/src/analysis.cpp b/src/analysis.cpp
+index 9ca407b..8278677 100755
+--- a/src/analysis.cpp
++++ b/src/analysis.cpp
+@@ -172,12 +172,14 @@ namespace Faunus {
+         << setw(k+4) << bracket("Z")
+         << setw(k+11) << bracket("Z"+squared)+"-"+bracket("Z")+squared
+         << setw(k+5) << bracket(textio::mu)
+-        << setw(k+5) << bracket(textio::mu+squared)+"-"+bracket(textio::mu)+squared << endl;
++        << setw(k+5) << bracket(textio::mu+squared)+"-"+bracket(textio::mu)+squared
++        << setw(k+5) << bracket("sum(|z|)") << endl;
+       for (auto &m : Z)
+         o << indent(SUB) << std::left << setw(w) << m.first << setw(k) << m.second.avg()
+           << setw(k+1) << Z2[m.first].avg()-pow(m.second.avg(),2)
+           << setw(k) << mu[m.first].avg()
+-          << setw(k) << mu2[m.first].avg()-pow(mu[m.first].avg(),2)<< endl;
++          << setw(k) << mu2[m.first].avg()-pow(mu[m.first].avg(),2)
++          << setw(k) << Zabs[m.first].avg() << endl;
+       return o.str();
+     }
+ 
